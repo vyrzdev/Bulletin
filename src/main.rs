@@ -1,6 +1,7 @@
-use std::env;
+use std::{env, io};
 use std::fmt::Error;
 use std::fs::File;
+use std::io::{BufRead, BufReader, Lines};
 use std::path::PathBuf;
 use std::process::exit;
 use serde::{Deserialize, Serialize};
@@ -23,11 +24,28 @@ impl Config {
     }
 }
 
+fn get_subscriptions(config: &Config) -> Lines<BufReader<File>> {
+    match File::open(&config.subscriptions_path) {
+        Ok(file) => BufReader::new(file).lines(),
+        Err(e) => {
+            eprintln!("Error opening subscriptions file: {}", e);
+            exit(1);
+        }
+    }
+}
+
+fn list_subscriptions(config: Config) {
+    for line in get_subscriptions(&config) {
+        println!("{}", line.unwrap());
+    }
+}
+
 fn bulletin_help() {
     println!("Usage: bulletin <command> <arguments, >");
     println!("Commands:");
     println!("help : Show this message");
     println!("subscribe <address>: Subscribe to bulletins");
+    println!("list : List all subscriptions");
 }
 
 fn main() {
@@ -62,7 +80,7 @@ fn main() {
                     bulletin_help();
                 },
                 "list" => {
-                    list_subscriptions(&config);
+                    list_subscriptions(config);
                     exit(0);
                 }
                 _ => {
